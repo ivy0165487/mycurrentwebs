@@ -15,38 +15,8 @@ function App() {
   const [editingWebsite, setEditingWebsite] = useState<Website | null>(null);
 
   useEffect(() => {
-    checkUser();
     fetchWebsites();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        checkUser();
-        fetchWebsites();
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
   }, []);
-
-  const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setIsAuthenticated(!!session);
-
-    if (session?.user?.email) {
-      const { data } = await supabase
-        .from('admins')
-        .select('id')
-        .eq('email', session.user.email)
-        .maybeSingle();
-
-      setIsAdmin(!!data);
-    } else {
-      setIsAdmin(false);
-    }
-  };
 
   const fetchWebsites = async () => {
     try {
@@ -117,7 +87,8 @@ function App() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    setIsAuthenticated(false);
+    setIsAdmin(false);
   };
 
   return (
@@ -236,6 +207,10 @@ function App() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+        onLogin={() => {
+          setIsAuthenticated(true);
+          setIsAdmin(true);
+        }}
       />
     </div>
   );

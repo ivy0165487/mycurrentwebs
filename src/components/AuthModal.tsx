@@ -1,16 +1,16 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { admins } from '../lib/admins';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLogin: () => void;
 }
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -20,23 +20,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError('');
 
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) throw error;
-        alert('Account created successfully! You can now sign in.');
-        setIsSignUp(false);
+      const admin = admins.find(a => a.email === email && a.password === password);
+      if (admin) {
+        onLogin();
+        onClose();
         setEmail('');
         setPassword('');
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        onClose();
+        throw new Error('Invalid email or password');
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
@@ -53,7 +44,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       <div className="bg-white rounded-lg max-w-md w-full">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">
-            {isSignUp ? 'Create Account' : 'Admin Login'}
+            Admin Login
           </h2>
           <button
             onClick={onClose}
@@ -104,21 +95,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
+            {loading ? 'Please wait...' : 'Sign In'}
           </button>
-
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError('');
-              }}
-              className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-            >
-              {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
-            </button>
-          </div>
         </form>
       </div>
     </div>
