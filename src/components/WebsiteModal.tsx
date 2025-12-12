@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import type { Website } from '../lib/supabase';
+import type { Website } from '../types';
 
 interface WebsiteModalProps {
   isOpen: boolean;

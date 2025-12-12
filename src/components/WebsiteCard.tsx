@@ -1,5 +1,5 @@
 import { ExternalLink, Edit, Trash2 } from 'lucide-react';
-import type { Website } from '../lib/supabase';
+import type { Website } from '../types';
 
 interface WebsiteCardProps {
   website: Website;

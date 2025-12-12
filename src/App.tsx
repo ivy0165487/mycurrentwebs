@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Globe, Plus, LogIn, LogOut, Github } from 'lucide-react';
-import { supabase, type Website } from './lib/supabase';
 import WebsiteCard from './components/WebsiteCard';
 import WebsiteModal from './components/WebsiteModal';
 import AuthModal from './components/AuthModal';
+import type { Website } from './types';
 
 function App() {
   const [websites, setWebsites] = useState<Website[]>([]);
@@ -15,65 +15,53 @@ function App() {
   const [editingWebsite, setEditingWebsite] = useState<Website | null>(null);
 
   useEffect(() => {
-    fetchWebsites();
+    loadWebsites();
   }, []);
 
-  const fetchWebsites = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('websites')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setWebsites(data || []);
-    } catch (error) {
-      console.error('Error fetching websites:', error);
-    } finally {
-      setLoading(false);
+  const loadWebsites = () => {
+    const stored = localStorage.getItem('websites');
+    if (stored) {
+      setWebsites(JSON.parse(stored));
     }
+    setLoading(false);
   };
 
-  const handleSaveWebsite = async (websiteData: Partial<Website>) => {
-    try {
-      if (editingWebsite) {
-        const { error } = await supabase
-          .from('websites')
-          .update(websiteData)
-          .eq('id', editingWebsite.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('websites')
-          .insert([websiteData]);
-
-        if (error) throw error;
-      }
-
-      fetchWebsites();
-      setEditingWebsite(null);
-    } catch (error) {
-      console.error('Error saving website:', error);
-      alert('Failed to save website. Please try again.');
+  const handleSaveWebsite = (websiteData: Partial<Website>) => {
+    const now = new Date().toISOString();
+    if (editingWebsite) {
+      const updated = websites.map(w => 
+        w.id === editingWebsite.id 
+          ? { ...w, ...websiteData, updated_at: now } 
+          : w
+      );
+      setWebsites(updated);
+      localStorage.setItem('websites', JSON.stringify(updated));
+    } else {
+      const newWebsite: Website = {
+        id: Date.now().toString(),
+        name: websiteData.name || '',
+        url: websiteData.url || '',
+        description: websiteData.description || '',
+        category: websiteData.category || '',
+        image_url: websiteData.image_url || '',
+        is_active: true,
+        created_at: now,
+        updated_at: now,
+      };
+      const updated = [...websites, newWebsite];
+      setWebsites(updated);
+      localStorage.setItem('websites', JSON.stringify(updated));
     }
+    setEditingWebsite(null);
+    setIsModalOpen(false);
   };
 
-  const handleDeleteWebsite = async (id: string) => {
+  const handleDeleteWebsite = (id: string) => {
     if (!confirm('Are you sure you want to delete this website?')) return;
 
-    try {
-      const { error } = await supabase
-        .from('websites')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchWebsites();
-    } catch (error) {
-      console.error('Error deleting website:', error);
-      alert('Failed to delete website. Please try again.');
-    }
+    const updated = websites.filter(w => w.id !== id);
+    setWebsites(updated);
+    localStorage.setItem('websites', JSON.stringify(updated));
   };
 
   const handleEditWebsite = (website: Website) => {
@@ -189,7 +177,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center gap-2 text-gray-600">
             <Github size={20} />
-            <span>Built with React, TypeScript, and Supabase</span>
+            <span>Built with React, TypeScript, and Tailwind</span>
           </div>
         </div>
       </footer>
