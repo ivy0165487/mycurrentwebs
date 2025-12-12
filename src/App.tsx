@@ -15,13 +15,24 @@ function App() {
   const [editingWebsite, setEditingWebsite] = useState<Website | null>(null);
 
   useEffect(() => {
+    console.log('App mounting, loading websites...');
     loadWebsites();
   }, []);
 
   const loadWebsites = () => {
-    const stored = localStorage.getItem('websites');
-    if (stored) {
-      setWebsites(JSON.parse(stored));
+    try {
+      const stored = localStorage.getItem('websites');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setWebsites(Array.isArray(parsed) ? parsed : []);
+        console.log('Loaded websites:', parsed);
+      } else {
+        setWebsites([]);
+        console.log('No websites in localStorage');
+      }
+    } catch (error) {
+      console.error('Error loading websites:', error);
+      setWebsites([]);
     }
     setLoading(false);
   };
@@ -74,9 +85,10 @@ function App() {
     setIsModalOpen(true);
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     setIsAuthenticated(false);
     setIsAdmin(false);
+    console.log('Signed out');
   };
 
   return (
